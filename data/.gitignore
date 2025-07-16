@@ -1,0 +1,26 @@
+# Ignore any 'data' directories
+**/data/
+
+# Ignore typical data file formats
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.json
+*.parquet
+*.feather
+*.h5
+*.pkl
+*.pickle
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore outputs
+*.log
+*.out
+
+# Cache or temp files
+*.tmp
+*.bak
+.DS_Store
