@@ -17,7 +17,7 @@ class FaceBlurProcessor:
     Interactive face detection and blurring system
     '''
 
-    def __init__(self, confidence_threshonld: float = 0.9, blur_strength: int = 71):
+    def __init__(self, confidence_threshold: float = 0.9, blur_strength: int = 71):
         '''
         Args:
             confidence_threshold: Minimum confidence for face detection (0-1)
@@ -26,10 +26,10 @@ class FaceBlurProcessor:
 
         print('Initialising MTCNN Face Detector ...')
         self.detector = MTCNN()
-        self.confidence_threshold = confidence_threshonld
+        self.confidence_threshold = confidence_threshold
         self.blur_strength = blur_strength if blur_strength % 2 == 1 else blur_strength + 1
 
-        print(f'Face detector initialised with a confidence threshold: {confidence_threshonld}')
+        print(f'Face detector initialised with a confidence threshold: {confidence_threshold}')
         print(f'Blur strength set to: {self.blur_strength}')
 
     def detect_faces(self, image: np.ndarray) -> List[dict]:
@@ -292,13 +292,13 @@ class LiveFaceBlurApp:
             print('\nApplication interrupted by user')
         except Exception as e:
             print(f'Error occurred: {e}')
+        finally:
+            print('Exiting LiveFaceBlurApp.')
 
-# Usage example
-if __name__ == "__main__":
-    # Create the application
-    app = LiveFaceBlurApp(confidence_threshold=0.8, blur_strength=51)
-    
-    # Run the application
+def run_privacy_blur_demo(confidence_threshold=0.8, blur_strength=51, camera_index=0):
+    """
+    Run the live face blurring privacy protection demo.
+    """
     print("Starting Live Face Blur Application...")
-    app.run(camera_index=0) 
-            
+    app = LiveFaceBlurApp(confidence_threshold=confidence_threshold, blur_strength=blur_strength)
+    app.run(camera_index=camera_index)

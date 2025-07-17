@@ -1,97 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Smart Ballot Box Monitoring System
-# 
-# smart ballot box monitoring system 
-# 
-# ## 📌 Overview
-# An **AI-powered, low-cost solution** to monitor voter activity and detect suspicious interactions with ballot boxes during elections. The system uses **computer vision, anomaly detection, and real-time alerts** to ensure election integrity by identifying:
-# - Multiple votes by the same individual
-# - Unauthorized box tampering or movement
-# - Ballot stuffing attempts
-# - Time-series anomalies in voting patterns
-# 
-# ---
-# 
-# ## 🧰 Dataset Description
-# This project uses a **multi-modal dataset** combining public datasets and synthetic data:
-# 
-
-# ## The dataset consists of three CSV files:
-# 
-# * tampering_logs.csv - Contains sensor data (accelerometer readings, lid states) and voting activity
-# 
-# * object_interactions.csv - Contains computer vision data about detected objects interacting with ballot boxes
-# 
-# * tampering_events.csv - Contains labeled tampering events
-# 
-# ## Initial Observations
-# #### Tampering Logs Dataset:
-# 
-# * 20 entries with 7 features
-# 
-# * Contains timestamp, box ID, accelerometer data (x and y axes), lid state, votes in last minute, and tampering indicator
-# 
-# * Tampering events (is_tampering=1) show higher accelerometer readings and open lid states
-# 
-# * Normal voting periods show lower accelerometer readings and closed lid states
-# 
-# #### Object Interactions Dataset:
-# 
-# * 15 entries with 7 features
-# 
-# * Contains image paths, bounding box coordinates, class (hand/tool), and confidence scores
-# 
-# * Tools appear to have lower confidence scores than hands (0.85-0.91 vs 0.93-0.99)
-# 
-# * Bounding box areas for tools are generally larger than for hands
-# 
-# #### Tampering Events Dataset:
-# 
-# * 10 entries with 4 features
-# 
-# * Contains clip paths, frame ranges, and event types (box_shaking, lid_tampering, ballot_stuffing)
-# 
-# * "Normal" events have shorter durations than tampering events
-# ### Techniques used include:
-# 
-# * Deep Learning with Neural Networks
-# 
-# * K-Nearest Neighbors (KNN) for classification
-# 
-# * Clustering for anomaly detection
-# 
-# * Natural Language Processing for log analysis
-# 
-# * Time Series Analysis for temporal patterns
-# 
-# #### The system now provides:
-# 
-# * Real-time tampering detection with 95%+ accuracy
-# 
-# * Predictive analytics for potential threats
-# 
-# * Automated anomaly alerts
-# 
-# * Comprehensive audit trails
-# 
-# #### Enhanced Dataset Description
-# ##### Our multi-modal dataset now includes:
-# 
-# * Sensor Data: Accelerometer readings, lid states
-# 
-# * Computer Vision Data: Object detection frames
-# 
-# * Event Logs: Timestamped tampering events
-# 
-# * Metadata: Box IDs, confidence scores
-
-# * Tampering Detection
-
-# In[ ]:
-
-
+import pandas as pd
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -109,22 +16,119 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import classification_report, confusion_matrix, silhouette_score
 from sklearn.impute import SimpleImputer
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.inspection import permutation_importance
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from tensorflow.keras.callbacks import EarlyStopping
-
-
 import warnings
-warnings.filterwarnings('ignore')
 
-# Set style for visualizations
-plt.style.use('ggplot')
-plt.rcParams['figure.figsize'] = (12, 6)
+
+def run_tampering_detection_demo():
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler, LabelEncoder , RobustScaler
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.pipeline import Pipeline
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+    from sklearn.metrics import adjusted_rand_score
+    from sklearn.decomposition import PCA
+    from sklearn.cluster import KMeans
+    from sklearn.metrics import classification_report, confusion_matrix, silhouette_score
+    from sklearn.impute import SimpleImputer
+    from sklearn.feature_selection import VarianceThreshold
+    import tensorflow as tf
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense, Dropout
+    from tensorflow.keras.optimizers import Adam
+    from tensorflow.keras.utils import to_categorical
+    import warnings
+    warnings.filterwarnings('ignore')
+    plt.style.use('ggplot')
+    plt.rcParams['figure.figsize'] = (12, 6)
+
+    # Simulate dataset creation (for demo)
+    logs_data = {
+        "timestamp": pd.date_range("2023-11-05 08:15:00", periods=20, freq="min"),
+        "box_id": ["BB-001"]*8 + ["BB-002"]*4 + ["BB-003"]*5 + ["BB-004"]*3,
+        "accel_x": [0.12,1.85,0.03,2.10,0.15,0.08,1.92,0.05,0.11,1.78,0.07,2.05,0.09,1.95,0.04,0.10,1.88,0.06,2.12,0.14],
+        "accel_y": [0.05,0.92,0.01,1.80,0.02,0.01,0.88,0.01,0.03,0.85,0.01,1.72,0.02,0.90,0.01,0.03,0.82,0.01,1.85,0.02],
+        "lid_state": ["closed","open","closed","open","closed","closed","open","closed","closed","open","closed","open","closed","open","closed","closed","open","closed","open","closed"],
+        "votes_last_min": [12,0,3,0,8,5,0,4,10,0,6,0,9,0,7,11,0,5,0,8],
+        "is_tampering": [0,1,0,1,0,0,1,0,0,1,0,1,0,1,0,0,1,0,1,0]
+    }
+    pd.DataFrame(logs_data).to_csv("tampering_logs.csv", index=False)
+    logs_df = pd.read_csv("tampering_logs.csv")
+
+    # Preprocessing
+    logs_df['timestamp'] = pd.to_datetime(logs_df['timestamp'])
+    logs_df['hour'] = logs_df['timestamp'].dt.hour
+    logs_df['minute'] = logs_df['timestamp'].dt.minute
+    logs_df['movement_magnitude'] = np.sqrt(logs_df['accel_x']**2 + logs_df['accel_y']**2)
+    logs_df['lid_state'] = logs_df['lid_state'].map({'closed': 0, 'open': 1})
+
+    # Features & target
+    X_logs = logs_df[['accel_x', 'accel_y', 'movement_magnitude', 'votes_last_min']]
+    y_logs = logs_df['is_tampering']
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_logs, y_logs, test_size=0.3, random_state=42, stratify=y_logs)
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    # Baseline model: Random Forest
+    from sklearn.ensemble import RandomForestClassifier
+    rf = RandomForestClassifier(random_state=42)
+    rf.fit(X_train_scaled, y_train)
+    y_pred = rf.predict(X_test_scaled)
+    print("\nRandom Forest Performance:")
+    print(classification_report(y_test, y_pred))
+    print("Confusion Matrix:")
+    print(confusion_matrix(y_test, y_pred))
+
+    # Neural Network
+    X_nn = logs_df[['accel_x', 'accel_y', 'votes_last_min', 'hour', 'minute']]
+    y_nn = to_categorical(logs_df['is_tampering'])
+    X_train_nn, X_test_nn, y_train_nn, y_test_nn = train_test_split(
+        X_nn, y_nn, test_size=0.3, random_state=42)
+    scaler_nn = StandardScaler()
+    X_train_nn_scaled = scaler_nn.fit_transform(X_train_nn)
+    X_test_nn_scaled = scaler_nn.transform(X_test_nn)
+    model = Sequential([
+        Dense(64, activation='relu', input_shape=(X_train_nn_scaled.shape[1],)),
+        Dropout(0.2),
+        Dense(32, activation='relu'),
+        Dropout(0.2),
+        Dense(2, activation='softmax')
+    ])
+    model.compile(optimizer=Adam(learning_rate=0.001),
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.fit(X_train_nn_scaled, y_train_nn,
+              epochs=10,  # Lowered for demo speed
+              batch_size=8,
+              validation_split=0.2,
+              verbose=1)
+    loss, accuracy = model.evaluate(X_test_nn_scaled, y_test_nn)
+    print(f"\nNeural Net Test Accuracy: {accuracy:.4f}")
+
+    # Real-time prediction function
+    def predict_tampering(accel_x, accel_y, votes, hour, minute):
+        input_data = np.array([[accel_x, accel_y, votes, hour, minute]])
+        input_scaled = scaler_nn.transform(input_data)
+        prediction = model.predict(input_scaled)
+        return {
+            "tampering_probability": float(prediction[0][1]),
+            "tampering_detected": bool(np.argmax(prediction[0]) == 1)
+        }
+    # Example predictions
+    print("\nSample Prediction (likely tampering):", predict_tampering(1.8, 0.9, 0, 8, 30))
+    print("Sample Prediction (normal):", predict_tampering(0.1, 0.05, 10, 9, 15))
 
 
 # In[7]:
@@ -297,12 +301,12 @@ for col in categorical_cols:
 
 
 # Plot tampering events over time
-plt.figure(figsize=(14, 6))
-sns.lineplot(x='timestamp', y='is_tampering', data=logs_df)
-plt.title('Tampering Events Over Time')
-plt.ylabel('Tampering Occurrence (1=Yes)')
-plt.xticks(rotation=45)
-plt.show()
+# plt.figure(figsize=(14, 6))
+# sns.lineplot(x='timestamp', y='is_tampering', data=logs_df)
+# plt.title('Tampering Events Over Time')
+# plt.ylabel('Tampering Occurrence (1=Yes)')
+# plt.xticks(rotation=45)
+# plt.show()
 
 
 # * Observation: Tampering events occur in distinct spikes throughout the monitoring period, suggesting intermittent attempts at interference rather than continuous attacks.
@@ -311,20 +315,20 @@ plt.show()
 
 
 # Plot distribution of tampering events
-plt.figure(figsize=(10, 6))
-sns.countplot(x='is_tampering', data=logs_df)
-plt.title('Distribution of Tampering vs Normal Events')
-plt.xlabel('Tampering Indicator')
-plt.ylabel('Count')
-plt.show()
+# plt.figure(figsize=(10, 6))
+# sns.countplot(x='is_tampering', data=logs_df)
+# plt.title('Distribution of Tampering vs Normal Events')
+# plt.xlabel('Tampering Indicator')
+# plt.ylabel('Count')
+# plt.show()
 
 # Plot movement magnitude vs tampering
-plt.figure(figsize=(10, 6))
-sns.boxplot(x='is_tampering', y='movement_magnitude', data=logs_df)
-plt.title('Movement Magnitude vs Tampering Indicator')
-plt.xlabel('Tampering Indicator')
-plt.ylabel('Movement Magnitude')
-plt.show()
+# plt.figure(figsize=(10, 6))
+# sns.boxplot(x='is_tampering', y='movement_magnitude', data=logs_df)
+# plt.title('Movement Magnitude vs Tampering Indicator')
+# plt.xlabel('Tampering Indicator')
+# plt.ylabel('Movement Magnitude')
+# plt.show()`
 
 
 # Observations:
@@ -368,20 +372,20 @@ logs_df['movement_magnitude']
 
 
 # Visualizations
-plt.figure(figsize=(12, 6))
-sns.boxplot(x='is_tampering', y='movement_magnitude', data=logs_df)
-plt.title('Movement Magnitude vs Tampering Status')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.boxplot(x='is_tampering', y='movement_magnitude', data=logs_df)
+# plt.title('Movement Magnitude vs Tampering Status')
+# plt.show()
 
-plt.figure(figsize=(12, 6))
-sns.countplot(x='lid_state', hue='is_tampering', data=logs_df)
-plt.title('Lid State vs Tampering Status')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.countplot(x='lid_state', hue='is_tampering', data=logs_df)
+# plt.title('Lid State vs Tampering Status')
+# plt.show()
 
-plt.figure(figsize=(12, 6))
-sns.scatterplot(x='accel_x', y='accel_y', hue='is_tampering', data=logs_df)
-plt.title('Accelerometer Readings by Tampering Status')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.scatterplot(x='accel_x', y='accel_y', hue='is_tampering', data=logs_df)
+# plt.title('Accelerometer Readings by Tampering Status')
+# plt.show()
 
 
 # Observations:
@@ -402,12 +406,12 @@ plt.show()
 
 
 # Compare acceleration patterns during tampering vs normal
-plt.figure(figsize=(12, 6))
-sns.boxplot(x='is_tampering', y='movement_magnitude', data=logs_df)
-plt.title('Movement Magnitude During Tampering vs Normal Operations')
-plt.xlabel('Tampering Occurrence (1=Yes)')
-plt.ylabel('Movement Magnitude')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.boxplot(x='is_tampering', y='movement_magnitude', data=logs_df)
+# plt.title('Movement Magnitude During Tampering vs Normal Operations')
+# plt.xlabel('Tampering Occurrence (1=Yes)')
+# plt.ylabel('Movement Magnitude')
+# plt.show()
 
 
 # * Observation: Tampering events show significantly higher movement magnitude (mean ~2.1) compared to normal operations (mean ~0.15), making this a strong predictive feature.
@@ -418,12 +422,12 @@ plt.show()
 
 
 # Analyze detected object classes and confidence
-plt.figure(figsize=(12, 6))
-sns.violinplot(x='class', y='confidence', data=objects_df)
-plt.title('Detection Confidence by Object Class')
-plt.xlabel('Object Class (0=hand, 1=tool)')
-plt.ylabel('Confidence Score')
-plt.show()
+#plt.figure(figsize=(12, 6))
+#sns.violinplot(x='class', y='confidence', data=objects_df)
+#plt.title('Detection Confidence by Object Class')
+#plt.xlabel('Object Class (0=hand, 1=tool)')
+#plt.ylabel('Confidence Score')
+#plt.show()
 
 
 # * Observation: Both hand and tool detections show high confidence scores (mostly >0.85), with tools having slightly more variance in detection confidence.
@@ -463,20 +467,20 @@ print(objects_df.groupby('class')['bbox_area'].describe())
 
 
 # Visualizations
-plt.figure(figsize=(12, 6))
-sns.boxplot(x='class', y='confidence', data=objects_df)
-plt.title('Confidence Scores by Object Class')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.boxplot(x='class', y='confidence', data=objects_df)
+# plt.title('Confidence Scores by Object Class')
+# plt.show()
 
-plt.figure(figsize=(12, 6))
-sns.scatterplot(x='x_min', y='y_min', hue='class', data=objects_df)
-plt.title('Object Position by Class')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.scatterplot(x='x_min', y='y_min', hue='class', data=objects_df)
+# plt.title('Object Position by Class')
+# plt.show()
 
-plt.figure(figsize=(12, 6))
-sns.boxplot(x='class', y='bbox_area', data=objects_df)
-plt.title('Bounding Box Area by Object Class')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.boxplot(x='class', y='bbox_area', data=objects_df)
+# plt.title('Bounding Box Area by Object Class')
+# plt.show()
 
 
 # Observations:
@@ -512,10 +516,10 @@ print(events_df.groupby('event_type')['duration'].describe())
 
 
 # Visualization
-plt.figure(figsize=(12, 6))
-sns.boxplot(x='event_type', y='duration', data=events_df)
-plt.title('Event Duration by Type')
-plt.show()
+#plt.figure(figsize=(12, 6))
+#sns.boxplot(x='event_type', y='duration', data=events_df)
+#plt.title('Event Duration by Type')
+#plt.show()
 
 
 # Observations:
@@ -534,13 +538,13 @@ plt.show()
 
 
 # Plot votes over time
-plt.figure(figsize=(12, 6))
-sns.lineplot(x='timestamp', y='votes_last_min', hue='is_tampering', data=logs_df)
-plt.title('Voting Activity Over Time with Tampering Indicators')
-plt.xlabel('Timestamp')
-plt.ylabel('Votes in Last Minute')
-plt.xticks(rotation=45)
-plt.show()
+# plt.figure(figsize=(12, 6))
+# sns.lineplot(x='timestamp', y='votes_last_min', hue='is_tampering', data=logs_df)
+# plt.title('Voting Activity Over Time with Tampering Indicators')
+# plt.xlabel('Timestamp')
+# plt.ylabel('Votes in Last Minute')
+# plt.xticks(rotation=45)
+# plt.show()
 
 
 # Observations:
@@ -554,15 +558,15 @@ plt.show()
 
 
 # Statistical summary of numerical features
-print("Statistical Summary of Tampering Logs:")
-print(logs_df.describe())
+# print("Statistical Summary of Tampering Logs:")
+# print(logs_df.describe())
 
-# Correlation matrix
-corr_matrix = logs_df.corr()
-plt.figure(figsize=(12, 8))
-sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', center=0)
-plt.title('Correlation Matrix of Tampering Log Features')
-plt.show()
+# # Correlation matrix
+# corr_matrix = logs_df.select_dtypes(include=[float, int]).corr()
+# plt.figure(figsize=(12, 8))
+# sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', center=0)
+# plt.title('Correlation Matrix of Tampering Log Features')
+# plt.show()
 
 
 # Observations:
@@ -753,13 +757,13 @@ kmeans = KMeans(n_clusters=2, random_state=42)
 clusters = kmeans.fit_predict(X_train_scaled)
 
 # Plot clusters
-plt.figure(figsize=(10, 6))
-plt.scatter(X_train_scaled[:, 0], X_train_scaled[:, 1], c=clusters, cmap='viridis')
-plt.title('K-Means Clustering of Tampering Data')
-plt.xlabel('PCA Component 1')
-plt.ylabel('PCA Component 2')
-plt.colorbar(label='Cluster')
-plt.show()
+# plt.figure(figsize=(10, 6))
+# plt.scatter(X_train_scaled[:, 0], X_train_scaled[:, 1], c=clusters, cmap='viridis')
+# plt.title('K-Means Clustering of Tampering Data')
+# plt.xlabel('PCA Component 1')
+# plt.ylabel('PCA Component 2')
+# plt.colorbar(label='Cluster')
+# plt.show()
 
 # Compare clusters with actual labels
 ari = adjusted_rand_score(y_train, clusters)
@@ -789,12 +793,12 @@ for k in range(2, 10):
     score = silhouette_score(cluster_data, kmeans.labels_)
     silhouette_scores.append(score)
 
-plt.figure(figsize=(12, 6))
-plt.plot(range(2, 10), silhouette_scores, marker='o')
-plt.title('Silhouette Scores for Different Cluster Counts')
-plt.xlabel('Number of Clusters')
-plt.ylabel('Silhouette Score')
-plt.show()
+# plt.figure(figsize=(12, 6))
+# plt.plot(range(2, 10), silhouette_scores, marker='o')
+# plt.title('Silhouette Scores for Different Cluster Counts')
+# plt.xlabel('Number of Clusters')
+# plt.ylabel('Silhouette Score')
+# plt.show()
 
 # Apply KMeans with optimal clusters
 optimal_clusters = np.argmax(silhouette_scores) + 2
@@ -855,15 +859,15 @@ history = model.fit(X_train_nn_scaled, y_train_nn,
                     validation_split=0.2,
                     verbose=1)
 
-# Plot training history
-plt.figure(figsize=(12, 6))
-plt.plot(history.history['accuracy'], label='Training Accuracy')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-plt.title('Neural Network Training History')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
+#Plot training history
+#plt.figure(figsize=(12, 6))
+#plt.plot(history.history['accuracy'], label='Training Accuracy')
+#plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+#plt.title('Neural Network Training History')
+#plt.xlabel('Epoch')
+#plt.ylabel('Accuracy')
+#plt.legend()
+#plt.show()
 
 # Evaluate
 loss, accuracy = model.evaluate(X_test_nn_scaled, y_test_nn)
