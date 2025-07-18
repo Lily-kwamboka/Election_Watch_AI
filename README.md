@@ -1,5 +1,5 @@
 # Election Watch AI System
-![Election Watch AI Demo](<Ballot box monitoring.png>) Example of ballot box monitoring in action
+![Election Watch AI Demo](<images/ballot_monitoring.png>) Example of ballot box monitoring in action
 
 ## Overview
 This project implements a comprehensive computer vision system to monitor ballot boxes and detect potential electoral fraud or irregularities. The system combines multiple deep learning models to analyze video feeds in real-time, detecting suspicious activities while preserving voter privacy.
@@ -70,7 +70,7 @@ LFW Face Dataset	Kaggle Link
 Hand Gesture Dataset	Kaggle Link
 Synthetic Ballot Dataset	Generated using OpenCV/Blender
 #####  System Architecture
-![alt text](<System Architecture.png>)
+![alt text](<images/system_architecture.png>)
 
 ####  Getting Started
 * Prerequisites
