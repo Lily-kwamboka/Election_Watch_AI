@@ -672,3 +672,12 @@ def run_face_recognition_demo():
     print(f" Model saved as: {model_filename}")
     print(f" You can now use this model to identify repeated appearances in new image sequences!")
 
+if __name__ == "__main__":
+    print("🚀 Starting Face Recognition Demo (Standalone)")
+    recognizer = LFWFaceRecognizer(min_faces_per_person=2, similarity_threshold=0.65)
+    images, target_names, targets = recognizer.load_lfw_dataset()
+    recognizer.build_face_database(images, target_names, targets)
+    recognizer.show_sample_images()
+    print("[INFO] Sample images displayed. Database and stats printed above.")
+
+    print(f" You can now use this model to identify repeated appearances in new image sequences!")

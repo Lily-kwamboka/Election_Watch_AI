@@ -15,7 +15,16 @@ print("[DEBUG] Importing tensorflow.keras.models.load_model...")
 from tensorflow.keras.models import load_model
 
 # Load model and gesture classes
-model = load_model("models/gesture_model.keras")
+import os
+model_path = os.path.join(os.path.dirname(__file__), '..', 'Models', 'gesture_model.keras')
+model_path = os.path.abspath(model_path)
+print(f"[DEBUG] Attempting to load model from: {model_path}")
+if os.path.exists(model_path):
+    model = load_model(model_path)
+    print("[DEBUG] Model loaded successfully.")
+else:
+    print(f"[ERROR] Model file not found: {model_path}. Skipping gesture detection.")
+    model = None
 class_labels = ['Two_Fingers_Edge', 'Hands_Down', 'Holding_Ballot', 'Moved_Palm', 'Open_Palm']
 
 # Buffer for last gestures
